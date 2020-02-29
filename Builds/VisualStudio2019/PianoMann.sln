@@ -1,0 +1,38 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2019
+
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PianoMann - Standalone Plugin", "PianoMann_StandalonePlugin.vcxproj", "{ABCBED25-5E3E-7EDC-B9F3-1120352D1BE8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{971FC33E-BE3C-BFAF-51A5-33845BE7EF2D} = {971FC33E-BE3C-BFAF-51A5-33845BE7EF2D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PianoMann - VST3", "PianoMann_VST3.vcxproj", "{30701764-B5D0-5724-6743-AA2122BBF1DA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{971FC33E-BE3C-BFAF-51A5-33845BE7EF2D} = {971FC33E-BE3C-BFAF-51A5-33845BE7EF2D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PianoMann - Shared Code", "PianoMann_SharedCode.vcxproj", "{971FC33E-BE3C-BFAF-51A5-33845BE7EF2D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{30701764-B5D0-5724-6743-AA2122BBF1DA}.Debug|x64.ActiveCfg = Debug|x64
+		{30701764-B5D0-5724-6743-AA2122BBF1DA}.Debug|x64.Build.0 = Debug|x64
+		{30701764-B5D0-5724-6743-AA2122BBF1DA}.Release|x64.ActiveCfg = Release|x64
+		{30701764-B5D0-5724-6743-AA2122BBF1DA}.Release|x64.Build.0 = Release|x64
+		{ABCBED25-5E3E-7EDC-B9F3-1120352D1BE8}.Debug|x64.ActiveCfg = Debug|x64
+		{ABCBED25-5E3E-7EDC-B9F3-1120352D1BE8}.Debug|x64.Build.0 = Debug|x64
+		{ABCBED25-5E3E-7EDC-B9F3-1120352D1BE8}.Release|x64.ActiveCfg = Release|x64
+		{ABCBED25-5E3E-7EDC-B9F3-1120352D1BE8}.Release|x64.Build.0 = Release|x64
+		{971FC33E-BE3C-BFAF-51A5-33845BE7EF2D}.Debug|x64.ActiveCfg = Debug|x64
+		{971FC33E-BE3C-BFAF-51A5-33845BE7EF2D}.Debug|x64.Build.0 = Debug|x64
+		{971FC33E-BE3C-BFAF-51A5-33845BE7EF2D}.Release|x64.ActiveCfg = Release|x64
+		{971FC33E-BE3C-BFAF-51A5-33845BE7EF2D}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

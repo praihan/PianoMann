@@ -1,9 +1,9 @@
 /*
   ==============================================================================
 
-	This file was auto-generated!
+  This file was auto-generated!
 
-	It contains the basic framework code for a JUCE plugin processor.
+  It contains the basic framework code for a JUCE plugin processor.
 
   ==============================================================================
 */
@@ -14,178 +14,155 @@
 //==============================================================================
 PianoMannAudioProcessor::PianoMannAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-	: AudioProcessor(BusesProperties()
-#if ! JucePlugin_IsMidiEffect
-#if ! JucePlugin_IsSynth
-		.withInput("Input", AudioChannelSet::stereo(), true)
+    : AudioProcessor(BusesProperties()
+#if !JucePlugin_IsMidiEffect
+#if !JucePlugin_IsSynth
+                         .withInput("Input", AudioChannelSet::stereo(), true)
 #endif
-		.withOutput("Output", AudioChannelSet::stereo(), true)
+                         .withOutput("Output", AudioChannelSet::stereo(), true)
 #endif
-	)
+      )
 #endif
 {
 }
 
-PianoMannAudioProcessor::~PianoMannAudioProcessor()
-{
-}
+PianoMannAudioProcessor::~PianoMannAudioProcessor() {}
 
 //==============================================================================
-const String PianoMannAudioProcessor::getName() const
-{
-	return JucePlugin_Name;
+const String PianoMannAudioProcessor::getName() const {
+  return JucePlugin_Name;
 }
 
-bool PianoMannAudioProcessor::acceptsMidi() const
-{
+bool PianoMannAudioProcessor::acceptsMidi() const {
 #if JucePlugin_WantsMidiInput
-	return true;
+  return true;
 #else
-	return false;
+  return false;
 #endif
 }
 
-bool PianoMannAudioProcessor::producesMidi() const
-{
+bool PianoMannAudioProcessor::producesMidi() const {
 #if JucePlugin_ProducesMidiOutput
-	return true;
+  return true;
 #else
-	return false;
+  return false;
 #endif
 }
 
-bool PianoMannAudioProcessor::isMidiEffect() const
-{
+bool PianoMannAudioProcessor::isMidiEffect() const {
 #if JucePlugin_IsMidiEffect
-	return true;
+  return true;
 #else
-	return false;
+  return false;
 #endif
 }
 
-double PianoMannAudioProcessor::getTailLengthSeconds() const
-{
-	return 0.0;
+double PianoMannAudioProcessor::getTailLengthSeconds() const { return 0.0; }
+
+int PianoMannAudioProcessor::getNumPrograms() {
+  return 1; // NB: some hosts don't cope very well if you tell them there are 0
+            // programs, so this should be at least 1, even if you're not really
+            // implementing programs.
 }
 
-int PianoMannAudioProcessor::getNumPrograms()
-{
-	return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-				// so this should be at least 1, even if you're not really implementing programs.
-}
+int PianoMannAudioProcessor::getCurrentProgram() { return 0; }
 
-int PianoMannAudioProcessor::getCurrentProgram()
-{
-	return 0;
-}
+void PianoMannAudioProcessor::setCurrentProgram(int index) {}
 
-void PianoMannAudioProcessor::setCurrentProgram(int index)
-{
-}
+const String PianoMannAudioProcessor::getProgramName(int index) { return {}; }
 
-const String PianoMannAudioProcessor::getProgramName(int index)
-{
-	return {};
-}
-
-void PianoMannAudioProcessor::changeProgramName(int index, const String& newName)
-{
-}
+void PianoMannAudioProcessor::changeProgramName(int index,
+                                                const String &newName) {}
 
 //==============================================================================
-void PianoMannAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
-{
-	// Use this method as the place to do any pre-playback
-	// initialization that you need..
+void PianoMannAudioProcessor::prepareToPlay(double sampleRate,
+                                            int samplesPerBlock) {
+  // Use this method as the place to do any pre-playback
+  // initialization that you need..
 }
 
-void PianoMannAudioProcessor::releaseResources()
-{
-	// When playback stops, you can use this as an opportunity to free up any
-	// spare memory, etc.
+void PianoMannAudioProcessor::releaseResources() {
+  // When playback stops, you can use this as an opportunity to free up any
+  // spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool PianoMannAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
-{
+bool PianoMannAudioProcessor::isBusesLayoutSupported(
+    const BusesLayout &layouts) const {
 #if JucePlugin_IsMidiEffect
-	ignoreUnused(layouts);
-	return true;
+  ignoreUnused(layouts);
+  return true;
 #else
-	// This is the place where you check if the layout is supported.
-	// In this template code we only support mono or stereo.
-	if (layouts.getMainOutputChannelSet() != AudioChannelSet::mono()
-		&& layouts.getMainOutputChannelSet() != AudioChannelSet::stereo())
-		return false;
+  // This is the place where you check if the layout is supported.
+  // In this template code we only support mono or stereo.
+  if (layouts.getMainOutputChannelSet() != AudioChannelSet::mono() &&
+      layouts.getMainOutputChannelSet() != AudioChannelSet::stereo())
+    return false;
 
-	// This checks if the input layout matches the output layout
-#if ! JucePlugin_IsSynth
-	if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
-		return false;
+    // This checks if the input layout matches the output layout
+#if !JucePlugin_IsSynth
+  if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+    return false;
 #endif
 
-	return true;
+  return true;
 #endif
 }
 #endif
 
-void PianoMannAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
-{
-	ScopedNoDenormals noDenormals;
-	auto totalNumInputChannels = getTotalNumInputChannels();
-	auto totalNumOutputChannels = getTotalNumOutputChannels();
+void PianoMannAudioProcessor::processBlock(AudioBuffer<float> &buffer,
+                                           MidiBuffer &midiMessages) {
+  ScopedNoDenormals noDenormals;
+  auto totalNumInputChannels = getTotalNumInputChannels();
+  auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-	// In case we have more outputs than inputs, this code clears any output
-	// channels that didn't contain input data, (because these aren't
-	// guaranteed to be empty - they may contain garbage).
-	// This is here to avoid people getting screaming feedback
-	// when they first compile a plugin, but obviously you don't need to keep
-	// this code if your algorithm always overwrites all the output channels.
-	for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-		buffer.clear(i, 0, buffer.getNumSamples());
+  // In case we have more outputs than inputs, this code clears any output
+  // channels that didn't contain input data, (because these aren't
+  // guaranteed to be empty - they may contain garbage).
+  // This is here to avoid people getting screaming feedback
+  // when they first compile a plugin, but obviously you don't need to keep
+  // this code if your algorithm always overwrites all the output channels.
+  for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    buffer.clear(i, 0, buffer.getNumSamples());
 
-	// This is the place where you'd normally do the guts of your plugin's
-	// audio processing...
-	// Make sure to reset the state if your inner loop is processing
-	// the samples and the outer loop is handling the channels.
-	// Alternatively, you can process the samples with the channels
-	// interleaved by keeping the same state.
-	for (int channel = 0; channel < totalNumInputChannels; ++channel)
-	{
-		auto* channelData = buffer.getWritePointer(channel);
+  // This is the place where you'd normally do the guts of your plugin's
+  // audio processing...
+  // Make sure to reset the state if your inner loop is processing
+  // the samples and the outer loop is handling the channels.
+  // Alternatively, you can process the samples with the channels
+  // interleaved by keeping the same state.
+  for (int channel = 0; channel < totalNumInputChannels; ++channel) {
+    auto *channelData = buffer.getWritePointer(channel);
 
-		// ..do something to the data...
-	}
+    // ..do something to the data...
+  }
 }
 
 //==============================================================================
-bool PianoMannAudioProcessor::hasEditor() const
-{
-	return true; // (change this to false if you choose to not supply an editor)
+bool PianoMannAudioProcessor::hasEditor() const {
+  return true; // (change this to false if you choose to not supply an editor)
 }
 
-AudioProcessorEditor* PianoMannAudioProcessor::createEditor()
-{
-	return new PianoMannAudioProcessorEditor(*this);
+AudioProcessorEditor *PianoMannAudioProcessor::createEditor() {
+  return new PianoMannAudioProcessorEditor(*this);
 }
 
 //==============================================================================
-void PianoMannAudioProcessor::getStateInformation(MemoryBlock& destData)
-{
-	// You should use this method to store your parameters in the memory block.
-	// You could do that either as raw data, or use the XML or ValueTree classes
-	// as intermediaries to make it easy to save and load complex data.
+void PianoMannAudioProcessor::getStateInformation(MemoryBlock &destData) {
+  // You should use this method to store your parameters in the memory block.
+  // You could do that either as raw data, or use the XML or ValueTree classes
+  // as intermediaries to make it easy to save and load complex data.
 }
 
-void PianoMannAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
-{
-	// You should use this method to restore your parameters from this memory block,
-	// whose contents will have been created by the getStateInformation() call.
+void PianoMannAudioProcessor::setStateInformation(const void *data,
+                                                  int sizeInBytes) {
+  // You should use this method to restore your parameters from this memory
+  // block, whose contents will have been created by the getStateInformation()
+  // call.
 }
 
 //==============================================================================
 // This creates new instances of the plugin..
-AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-{
-	return new PianoMannAudioProcessor();
+AudioProcessor *JUCE_CALLTYPE createPluginFilter() {
+  return new PianoMannAudioProcessor();
 }

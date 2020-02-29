@@ -1,9 +1,9 @@
 /*
   ==============================================================================
 
-    This file was auto-generated!
+	This file was auto-generated!
 
-    It contains the basic framework code for a JUCE plugin editor.
+	It contains the basic framework code for a JUCE plugin editor.
 
   ==============================================================================
 */
@@ -12,12 +12,12 @@
 #include "PluginEditor.h"
 
 //==============================================================================
-PianoMannAudioProcessorEditor::PianoMannAudioProcessorEditor (PianoMannAudioProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
+PianoMannAudioProcessorEditor::PianoMannAudioProcessorEditor(PianoMannAudioProcessor& p)
+	: AudioProcessorEditor(&p), processor(p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
+	// Make sure that before the constructor has finished, you've set the
+	// editor's size to whatever you need it to be.
+	setSize(400, 300);
 }
 
 PianoMannAudioProcessorEditor::~PianoMannAudioProcessorEditor()
@@ -25,18 +25,18 @@ PianoMannAudioProcessorEditor::~PianoMannAudioProcessorEditor()
 }
 
 //==============================================================================
-void PianoMannAudioProcessorEditor::paint (Graphics& g)
+void PianoMannAudioProcessorEditor::paint(Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
+	// (Our component is opaque, so we must completely fill the background with a solid color)
+	g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
 
-    g.setColour (Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), Justification::centred, 1);
+	g.setColour(Colours::white);
+	g.setFont(15.0f);
+	g.drawFittedText("Hello World!", getLocalBounds(), Justification::centred, 1);
 }
 
 void PianoMannAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+	// This is generally where you'll want to lay out the positions of any
+	// sub-components in your editor..
 }

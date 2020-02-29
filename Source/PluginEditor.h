@@ -1,9 +1,9 @@
 /*
   ==============================================================================
 
-    This file was auto-generated!
+	This file was auto-generated!
 
-    It contains the basic framework code for a JUCE plugin editor.
+	It contains the basic framework code for a JUCE plugin editor.
 
   ==============================================================================
 */
@@ -16,20 +16,20 @@
 //==============================================================================
 /**
 */
-class PianoMannAudioProcessorEditor  : public AudioProcessorEditor
+class PianoMannAudioProcessorEditor : public AudioProcessorEditor
 {
 public:
-    PianoMannAudioProcessorEditor (PianoMannAudioProcessor&);
-    ~PianoMannAudioProcessorEditor();
+	PianoMannAudioProcessorEditor(PianoMannAudioProcessor&);
+	~PianoMannAudioProcessorEditor();
 
-    //==============================================================================
-    void paint (Graphics&) override;
-    void resized() override;
+	//==============================================================================
+	void paint(Graphics&) override;
+	void resized() override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
-    PianoMannAudioProcessor& processor;
+	// This reference is provided as a quick way for your editor to
+	// access the processor object that created it.
+	PianoMannAudioProcessor& processor;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PianoMannAudioProcessorEditor)
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PianoMannAudioProcessorEditor)
 };

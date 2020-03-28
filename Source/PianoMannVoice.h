@@ -61,22 +61,20 @@ struct PianoMannVoice : public SynthesiserVoice {
   }
 
   void startNote(int midiNoteNumber, float velocity, SynthesiserSound *,
-                 int /*currentPitchWheelPosition*/) override {
+                 int currentPitchWheelPosition) override {
+    ignoreUnused(currentPitchWheelPosition);
     jassert(midiNoteNumber == params.midiNoteNumber);
-    jassert(areBuffersReady);
+    jassert(isExcitationBufferReady);
     currentVelocity = velocity;
-    exciteBuffer();
     isNoteHeld = true;
+    exciteBuffer();
   }
 
-  void stopNote(float /*velocity*/, bool allowTailOff) override {
-    ignoreUnused(allowTailOff);
+  void stopNote(float velocity, bool allowTailOff) override {
+    ignoreUnused(velocity, allowTailOff);
     clearCurrentNote();
     isNoteHeld = false;
   }
-
-  void pitchWheelMoved(int /*newValue*/) override {}
-  void controllerMoved(int /*controllerNumber*/, int /*newValue*/) override {}
 
   void renderNextBlock(AudioBuffer<float> &outputBuffer, int startSample,
                        int numSamples) override {
@@ -92,9 +90,8 @@ struct PianoMannVoice : public SynthesiserVoice {
             delayLineBuffer[currentBufferPosition]));
 
       const auto currentSample = delayLineBuffer[currentBufferPosition];
-      for (auto outputChannel = outputBuffer.getNumChannels();
-           --outputChannel >= 0;) {
-        auto *output = outputBuffer.getWritePointer(outputChannel, startSample);
+      for (auto channel = outputBuffer.getNumChannels(); --channel >= 0;) {
+        auto *output = outputBuffer.getWritePointer(channel, startSample);
         output[sampleIndex] += currentSample;
       }
 
@@ -103,6 +100,11 @@ struct PianoMannVoice : public SynthesiserVoice {
   }
 
   using SynthesiserVoice::renderNextBlock;
+
+  void pitchWheelMoved(int newValue) override { ignoreUnused(newValue); }
+  void controllerMoved(int controllerNumber, int newValue) override {
+    ignoreUnused(controllerNumber, newValue);
+  }
 
 private:
   void prepareExcitationBuffers() {
@@ -122,7 +124,7 @@ private:
     });
 
     currentBufferPosition = 0;
-    areBuffersReady = true;
+    isExcitationBufferReady = true;
   }
 
   void exciteBuffer() {
@@ -136,7 +138,7 @@ private:
   const PianoMannVoiceParams params;
   float currentVelocity = 0.f;
 
-  bool areBuffersReady = false;
+  bool isExcitationBufferReady = false;
   std::vector<float> excitationBuffer, delayLineBuffer;
   int currentBufferPosition = 0;
 

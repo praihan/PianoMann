@@ -11,17 +11,19 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <algorithm>
+#include <vector>
 
 struct PianoMannSound : public SynthesiserSound {
   constexpr static int kMinNote = 21;
   constexpr static int kMaxNote = 108;
 
-  PianoMannSound(int midiNoteNumber) : midiNoteNumber(midiNoteNumber) {
+  PianoMannSound(int _midiNoteNumber) : midiNoteNumber(_midiNoteNumber) {
     jassert(midiNoteNumber >= kMinNote && midiNoteNumber <= kMaxNote);
   }
 
-  bool appliesToNote(int midiNoteNumber) override {
-    return midiNoteNumber == this->midiNoteNumber;
+  bool appliesToNote(int _midiNoteNumber) override {
+    return _midiNoteNumber == this->midiNoteNumber;
   }
   bool appliesToChannel(int midiChannel) override {
     ignoreUnused(midiChannel);
@@ -32,34 +34,41 @@ private:
   int midiNoteNumber;
 };
 
+struct PianoMannVoiceParams
+{
+  int midiNoteNumber;
+};
+
 /**
  * A synth voice that plays one specific note only.
  * This is because each note is modeled differently, albeit with similar
  * techniques.
  */
 struct PianoMannVoice : public SynthesiserVoice {
-  PianoMannVoice(int midiNoteNumber) : midiNoteNumber(midiNoteNumber) {}
+  PianoMannVoice(PianoMannVoiceParams params) : params(params) {}
 
   bool canPlaySound(SynthesiserSound *sound) override {
     if (auto *pianoMannSound = dynamic_cast<PianoMannSound *>(sound)) {
-      return pianoMannSound->appliesToNote(midiNoteNumber);
+      return pianoMannSound->appliesToNote(params.midiNoteNumber);
     }
     return false;
   }
 
+  void setCurrentPlaybackSampleRate(double newRate) override {
+    SynthesiserVoice::setCurrentPlaybackSampleRate(newRate);
+    prepareExcitationBuffers();
+  }
+
   void startNote(int midiNoteNumber, float velocity, SynthesiserSound *,
                  int /*currentPitchWheelPosition*/) override {
-    currentAngle = 0.0;
-    level = velocity * 0.15;
-    tailOff = 0.0;
-
-    auto cyclesPerSecond = MidiMessage::getMidiNoteInHertz(midiNoteNumber);
-    auto cyclesPerSample = cyclesPerSecond / getSampleRate();
-
-    angleDelta = cyclesPerSample * MathConstants<double>::twoPi;
+    jassert(midiNoteNumber == params.midiNoteNumber);
+    jassert(areBuffersReady);
+    currentVelocity = velocity;
+    exciteBuffer();
   }
 
   void stopNote(float /*velocity*/, bool allowTailOff) override {
+    /*
     if (allowTailOff) {
       // start a tail-off by setting this flag. The render callback will pick up
       // on this and do a fade out, calling clearCurrentNote() when it's
@@ -73,6 +82,9 @@ struct PianoMannVoice : public SynthesiserVoice {
       clearCurrentNote();
       angleDelta = 0.0;
     }
+    */
+    ignoreUnused(allowTailOff);
+    clearCurrentNote();
   }
 
   void pitchWheelMoved(int /*newValue*/) override {}
@@ -80,44 +92,63 @@ struct PianoMannVoice : public SynthesiserVoice {
 
   void renderNextBlock(AudioBuffer<float> &outputBuffer, int startSample,
                        int numSamples) override {
-    if (angleDelta != 0.0) {
-      if (tailOff > 0.0) {
-        while (--numSamples >= 0) {
-          auto currentSample =
-              (float)(std::sin(currentAngle) * level * tailOff);
+    constexpr auto kDecay = 0.998f;
 
-          for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-            outputBuffer.addSample(i, startSample, currentSample);
+    for (auto sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex) {
+      const auto nextBufferPosition = (1 + currentBufferPosition) %
+                                      static_cast<int>(delayLineBuffer.size());
 
-          currentAngle += angleDelta;
-          ++startSample;
+      delayLineBuffer[nextBufferPosition] =
+          (kDecay * 0.5f *
+           (delayLineBuffer[nextBufferPosition] +
+            delayLineBuffer[currentBufferPosition]));
 
-          tailOff *= 0.99;
-
-          if (tailOff <= 0.005) {
-            clearCurrentNote();
-
-            angleDelta = 0.0;
-            break;
-          }
-        }
-      } else {
-        while (--numSamples >= 0) {
-          auto currentSample = (float)(std::sin(currentAngle) * level);
-
-          for (auto i = outputBuffer.getNumChannels(); --i >= 0;)
-            outputBuffer.addSample(i, startSample, currentSample);
-
-          currentAngle += angleDelta;
-          ++startSample;
-        }
+      const auto currentSample = delayLineBuffer[currentBufferPosition];
+      for (auto outputChannel = outputBuffer.getNumChannels();
+           --outputChannel >= 0;) {
+        auto *output = outputBuffer.getWritePointer(outputChannel, startSample);
+        output[sampleIndex] += currentSample;
       }
+      currentBufferPosition = nextBufferPosition;
     }
   }
 
   using SynthesiserVoice::renderNextBlock;
 
 private:
-  int midiNoteNumber;
-  double currentAngle = 0.0, angleDelta = 0.0, level = 0.0, tailOff = 0.0;
+  void prepareExcitationBuffers() {
+    const auto sampleRate = getSampleRate();
+    if (sampleRate == 0.0) {
+      areBuffersReady = false;
+      return;
+    }
+    const auto frequencyInHz = MidiMessage::getMidiNoteInHertz(params.midiNoteNumber);
+    const auto excitationNumSamples = roundToInt(sampleRate / frequencyInHz);
+
+    delayLineBuffer.resize(excitationNumSamples);
+    std::fill(delayLineBuffer.begin(), delayLineBuffer.end(), 0.f);
+
+    excitationBuffer.resize(excitationNumSamples);
+    std::generate(excitationBuffer.begin(), excitationBuffer.end(), [] {
+      return (Random::getSystemRandom().nextFloat() * 2.0f) - 1.0f;
+    });
+
+    currentBufferPosition = 0;
+    areBuffersReady = true;
+  }
+
+  void exciteBuffer() {
+    jassert(delayLineBuffer.size() >= excitationBuffer.size());
+
+    std::transform(excitationBuffer.begin(), excitationBuffer.end(),
+                   delayLineBuffer.begin(),
+                   [this](float sample) { return currentVelocity * sample; });
+  }
+
+  const PianoMannVoiceParams params;
+  float currentVelocity = 0.f;
+
+  bool areBuffersReady = false;
+  std::vector<float> excitationBuffer, delayLineBuffer;
+  int currentBufferPosition = 0;
 };

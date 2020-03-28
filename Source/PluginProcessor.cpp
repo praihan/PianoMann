@@ -35,7 +35,7 @@ void PianoMannAudioProcessor::initializeSynth() {
   synth.clearSounds();
   for (auto midiNote = PianoMannSound::kMinNote;
        midiNote <= PianoMannSound::kMaxNote; ++midiNote) {
-    synth.addVoice(new PianoMannVoice(midiNote));
+    synth.addVoice(new PianoMannVoice({midiNote}));
     synth.addSound(new PianoMannSound(midiNote));
   }
 }

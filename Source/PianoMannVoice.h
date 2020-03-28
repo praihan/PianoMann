@@ -36,6 +36,7 @@ private:
 
 struct PianoMannVoiceParams {
   int midiNoteNumber;
+  dsp::ProcessorBase& postProcessor;
 };
 
 /**
@@ -80,6 +81,11 @@ struct PianoMannVoice : public SynthesiserVoice {
                        int numSamples) override {
     constexpr auto kDecay = 0.998f;
 
+    if (!isNoteHeld) {
+      // TODO: add sustain
+      return;
+    }
+
     for (auto sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex) {
       const auto nextBufferPosition = (1 + currentBufferPosition) %
                                       static_cast<int>(delayLineBuffer.size());
@@ -97,6 +103,10 @@ struct PianoMannVoice : public SynthesiserVoice {
 
       currentBufferPosition = nextBufferPosition;
     }
+
+    dsp::AudioBlock<float> block(outputBuffer);
+    const dsp::ProcessContextReplacing<float> processingContext(block);
+    params.postProcessor.process(processingContext);
   }
 
   using SynthesiserVoice::renderNextBlock;

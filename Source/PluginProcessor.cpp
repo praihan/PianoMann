@@ -11,6 +11,7 @@
 #include "PluginProcessor.h"
 #include "PianoMannVoice.h"
 #include "PluginEditor.h"
+#include <algorithm>
 
 //==============================================================================
 PianoMannAudioProcessor::PianoMannAudioProcessor()
@@ -33,10 +34,18 @@ PianoMannAudioProcessor::~PianoMannAudioProcessor() = default;
 void PianoMannAudioProcessor::initializeSynth() {
   synth.clearVoices();
   synth.clearSounds();
+  synthPerVoicePostProcessors.clear();
+  synthPerVoicePostProcessors.reserve(PianoMannSound::kMaxNote -
+                                      PianoMannSound::kMinNote + 1);
+
   for (auto midiNote = PianoMannSound::kMinNote;
        midiNote <= PianoMannSound::kMaxNote; ++midiNote) {
+    synthPerVoicePostProcessors.emplace_back(
+        // TODO: better audio processing
+        new dsp::ProcessorWrapper<
+            dsp::ProcessorChain<PianoMannLowPassFilter<3500>>>);
     synth.addVoice(
-        new PianoMannVoice({midiNote}));
+        new PianoMannVoice({midiNote, *synthPerVoicePostProcessors.back()}));
     synth.addSound(new PianoMannSound(midiNote));
   }
 }
@@ -105,12 +114,22 @@ void PianoMannAudioProcessor::prepareToPlay(
   const dsp::ProcessSpec processSpec{
       sampleRate, static_cast<uint32>(maximumExpectedSamplesPerBlock),
       static_cast<uint32>(getTotalNumOutputChannels())};
-  postProcessorChain.prepare(processSpec);
+  std::for_each(synthPerVoicePostProcessors.begin(),
+                synthPerVoicePostProcessors.end(),
+                [processSpec](std::unique_ptr<dsp::ProcessorBase> &processor) {
+                  processor->prepare(processSpec);
+                });
+  synthPostProcessor.prepare(processSpec);
 }
 
 void PianoMannAudioProcessor::releaseResources() {
   keyboardState.reset();
-  postProcessorChain.reset();
+  std::for_each(synthPerVoicePostProcessors.begin(),
+                synthPerVoicePostProcessors.end(),
+                [](std::unique_ptr<dsp::ProcessorBase> &processor) {
+                  processor->reset();
+                });
+  synthPostProcessor.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -153,8 +172,8 @@ void PianoMannAudioProcessor::processBlock(AudioBuffer<float> &buffer,
   synth.renderNextBlock(buffer, midiMessages, 0, numSamples);
 
   dsp::AudioBlock<float> block(buffer);
-  const juce::dsp::ProcessContextReplacing<float> processContext(block); 
-  postProcessorChain.process(processContext);
+  const dsp::ProcessContextReplacing<float> processContext(block);
+  synthPostProcessor.process(processContext);
 }
 
 //==============================================================================

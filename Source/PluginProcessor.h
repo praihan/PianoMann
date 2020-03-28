@@ -12,6 +12,8 @@
 
 #include "PianoMannLowPassFilter.h"
 #include <JuceHeader.h>
+#include <memory>
+#include <vector>
 
 //==============================================================================
 /**
@@ -22,14 +24,10 @@ public:
 
 private:
   Synthesiser synth;
+  std::vector<std::unique_ptr<dsp::ProcessorBase>> synthPerVoicePostProcessors;
   void initializeSynth();
-
-  // enum PostProcessChainIndex
-  // {
-  //   kPostProcessorLowPassIndex = 0
-  // };
   // TODO: change frequency of low-pass filter
-  dsp::ProcessorChain<PianoMannLowPassFilter<20000>> postProcessorChain;
+  dsp::ProcessorChain<PianoMannLowPassFilter<20000>> synthPostProcessor;
 
 public:
   //==============================================================================

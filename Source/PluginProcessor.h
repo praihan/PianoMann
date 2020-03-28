@@ -17,6 +17,12 @@
  */
 class PianoMannAudioProcessor : public AudioProcessor {
 public:
+  MidiKeyboardState keyboardState;
+private:
+  Synthesiser synth;
+  void initializeSynth();
+
+public:
   //==============================================================================
   PianoMannAudioProcessor();
   ~PianoMannAudioProcessor();

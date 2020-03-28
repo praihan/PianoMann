@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="cCbWGs" name="PianoMann" projectType="audioplug" jucerVersion="5.4.7">
+<JUCERPROJECT id="cCbWGs" name="PianoMann" projectType="audioplug" jucerVersion="5.4.7"
+              pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn"
+              cppLanguageStandard="17" pluginManufacturer="Loo Bois" pluginManufacturerCode="LooB"
+              bundleIdentifier="com.pianomann.PianoMann">
   <MAINGROUP id="wzSjqj" name="PianoMann">
     <GROUP id="{3520A161-3570-17E8-AE6B-59B689E4A599}" name="Source">
+      <FILE id="VY3yf5" name="PianoMannVoice.h" compile="0" resource="0"
+            file="Source/PianoMannVoice.h"/>
       <FILE id="PyKlWJ" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="hAO3Ca" name="PluginProcessor.h" compile="0" resource="0"

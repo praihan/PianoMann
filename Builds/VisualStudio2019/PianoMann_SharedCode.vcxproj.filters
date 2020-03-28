@@ -2430,6 +2430,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\PianoMannVoice.h">
+      <Filter>PianoMann\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Source\PluginProcessor.h">
       <Filter>PianoMann\Source</Filter>
     </ClInclude>

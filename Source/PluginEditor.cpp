@@ -1,9 +1,9 @@
 /*
   ==============================================================================
 
-    This file was auto-generated!
+  This file was auto-generated!
 
-    It contains the basic framework code for a JUCE plugin editor.
+  It contains the basic framework code for a JUCE plugin editor.
 
   ==============================================================================
 */
@@ -14,26 +14,25 @@
 //==============================================================================
 PianoMannAudioProcessorEditor::PianoMannAudioProcessorEditor(
     PianoMannAudioProcessor &p)
-    : AudioProcessorEditor(&p), processor(p) {
-  // Make sure that before the constructor has finished, you've set the
-  // editor's size to whatever you need it to be.
-  setSize(400, 300);
+    : AudioProcessorEditor(&p), processor(p),
+      midiKeyboardComponent(p.keyboardState,
+                            MidiKeyboardComponent::horizontalKeyboard) {
+  setOpaque(true);
+  setSize(640, 480);
+  addAndMakeVisible(midiKeyboardComponent);
 }
 
-PianoMannAudioProcessorEditor::~PianoMannAudioProcessorEditor() {}
+PianoMannAudioProcessorEditor::~PianoMannAudioProcessorEditor() = default;
 
-//==============================================================================
 void PianoMannAudioProcessorEditor::paint(Graphics &g) {
-  // (Our component is opaque, so we must completely fill the background with
-  // a solid color)
+  // Since this component is opaque, we must fill the entire viewport
   g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
-
-  g.setColour(Colours::white);
-  g.setFont(15.0f);
-  g.drawFittedText("Hello World!", getLocalBounds(), Justification::centred, 1);
 }
 
 void PianoMannAudioProcessorEditor::resized() {
-  // This is generally where you'll want to lay out the positions of any
-  // sub-components in your editor..
+  // TODO: set sizes
+  midiKeyboardComponent.setBounds(8, 96, getWidth() - 16, 64);
+  // sineButton.setBounds(16, 176, 150, 24);
+  // sampledButton.setBounds(16, 200, 150, 24);
+  // liveAudioDisplayComp.setBounds(8, 8, getWidth() - 16, 64);
 }

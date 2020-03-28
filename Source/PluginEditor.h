@@ -18,17 +18,17 @@
  */
 class PianoMannAudioProcessorEditor : public AudioProcessorEditor {
 public:
-  explicit PianoMannAudioProcessorEditor(PianoMannAudioProcessor &);
+  explicit PianoMannAudioProcessorEditor(PianoMannAudioProcessor&);
   ~PianoMannAudioProcessorEditor();
 
-  //==============================================================================
-  void paint(Graphics &) override;
+  void paint(Graphics& g) override;
   void resized() override;
 
 private:
   // This reference is provided as a quick way for your editor to
   // access the processor object that created it.
   PianoMannAudioProcessor &processor;
+  MidiKeyboardComponent midiKeyboardComponent;
 
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PianoMannAudioProcessorEditor)
 };

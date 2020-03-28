@@ -18,7 +18,7 @@ PianoMannAudioProcessorEditor::PianoMannAudioProcessorEditor(
       midiKeyboardComponent(p.keyboardState,
                             MidiKeyboardComponent::horizontalKeyboard) {
   setOpaque(true);
-  setSize(640, 480);
+  setSize(640, 72);
   addAndMakeVisible(midiKeyboardComponent);
 }
 
@@ -30,9 +30,5 @@ void PianoMannAudioProcessorEditor::paint(Graphics &g) {
 }
 
 void PianoMannAudioProcessorEditor::resized() {
-  // TODO: set sizes
-  midiKeyboardComponent.setBounds(8, 96, getWidth() - 16, 64);
-  // sineButton.setBounds(16, 176, 150, 24);
-  // sampledButton.setBounds(16, 200, 150, 24);
-  // liveAudioDisplayComp.setBounds(8, 8, getWidth() - 16, 64);
+  midiKeyboardComponent.setBounds(8, 8, getWidth() - 16, 64);
 }

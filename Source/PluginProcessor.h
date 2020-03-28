@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "PianoMannLowPassFilter.h"
 #include <JuceHeader.h>
 
 //==============================================================================
@@ -18,9 +19,17 @@
 class PianoMannAudioProcessor : public AudioProcessor {
 public:
   MidiKeyboardState keyboardState;
+
 private:
   Synthesiser synth;
   void initializeSynth();
+
+  // enum PostProcessChainIndex
+  // {
+  //   kPostProcessorLowPassIndex = 0
+  // };
+  // TODO: change frequency of low-pass filter
+  dsp::ProcessorChain<PianoMannLowPassFilter<20000>> postProcessorChain;
 
 public:
   //==============================================================================

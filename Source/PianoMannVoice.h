@@ -34,8 +34,7 @@ private:
   int midiNoteNumber;
 };
 
-struct PianoMannVoiceParams
-{
+struct PianoMannVoiceParams {
   int midiNoteNumber;
 };
 
@@ -56,7 +55,9 @@ struct PianoMannVoice : public SynthesiserVoice {
 
   void setCurrentPlaybackSampleRate(double newRate) override {
     SynthesiserVoice::setCurrentPlaybackSampleRate(newRate);
-    prepareExcitationBuffers();
+    if (newRate != 0.0) {
+      prepareExcitationBuffers();
+    }
   }
 
   void startNote(int midiNoteNumber, float velocity, SynthesiserSound *,
@@ -65,26 +66,13 @@ struct PianoMannVoice : public SynthesiserVoice {
     jassert(areBuffersReady);
     currentVelocity = velocity;
     exciteBuffer();
+    isNoteHeld = true;
   }
 
   void stopNote(float /*velocity*/, bool allowTailOff) override {
-    /*
-    if (allowTailOff) {
-      // start a tail-off by setting this flag. The render callback will pick up
-      // on this and do a fade out, calling clearCurrentNote() when it's
-      // finished.
-
-      if (tailOff == 0.0) // we only need to begin a tail-off if it's not
-                          // already doing so - the
-        tailOff = 1.0;    // stopNote method could be called more than once.
-    } else {
-      // we're being told to stop playing immediately, so reset everything..
-      clearCurrentNote();
-      angleDelta = 0.0;
-    }
-    */
     ignoreUnused(allowTailOff);
     clearCurrentNote();
+    isNoteHeld = false;
   }
 
   void pitchWheelMoved(int /*newValue*/) override {}
@@ -109,6 +97,7 @@ struct PianoMannVoice : public SynthesiserVoice {
         auto *output = outputBuffer.getWritePointer(outputChannel, startSample);
         output[sampleIndex] += currentSample;
       }
+
       currentBufferPosition = nextBufferPosition;
     }
   }
@@ -118,11 +107,10 @@ struct PianoMannVoice : public SynthesiserVoice {
 private:
   void prepareExcitationBuffers() {
     const auto sampleRate = getSampleRate();
-    if (sampleRate == 0.0) {
-      areBuffersReady = false;
-      return;
-    }
-    const auto frequencyInHz = MidiMessage::getMidiNoteInHertz(params.midiNoteNumber);
+    jassert(sampleRate != 0.0);
+
+    const auto frequencyInHz =
+        MidiMessage::getMidiNoteInHertz(params.midiNoteNumber);
     const auto excitationNumSamples = roundToInt(sampleRate / frequencyInHz);
 
     delayLineBuffer.resize(excitationNumSamples);
@@ -151,4 +139,6 @@ private:
   bool areBuffersReady = false;
   std::vector<float> excitationBuffer, delayLineBuffer;
   int currentBufferPosition = 0;
+
+  bool isNoteHeld = false;
 };

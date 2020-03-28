@@ -35,7 +35,8 @@ void PianoMannAudioProcessor::initializeSynth() {
   synth.clearSounds();
   for (auto midiNote = PianoMannSound::kMinNote;
        midiNote <= PianoMannSound::kMaxNote; ++midiNote) {
-    synth.addVoice(new PianoMannVoice({midiNote}));
+    synth.addVoice(
+        new PianoMannVoice({midiNote}));
     synth.addSound(new PianoMannSound(midiNote));
   }
 }
@@ -96,14 +97,21 @@ void PianoMannAudioProcessor::changeProgramName(int index,
 }
 
 //==============================================================================
-void PianoMannAudioProcessor::prepareToPlay(double sampleRate,
-                                            int samplesPerBlock) {
-  ignoreUnused(samplesPerBlock);
+void PianoMannAudioProcessor::prepareToPlay(
+    double sampleRate, int maximumExpectedSamplesPerBlock) {
   synth.setCurrentPlaybackSampleRate(sampleRate);
   keyboardState.reset();
+
+  const dsp::ProcessSpec processSpec{
+      sampleRate, static_cast<uint32>(maximumExpectedSamplesPerBlock),
+      static_cast<uint32>(getTotalNumOutputChannels())};
+  postProcessorChain.prepare(processSpec);
 }
 
-void PianoMannAudioProcessor::releaseResources() { keyboardState.reset(); }
+void PianoMannAudioProcessor::releaseResources() {
+  keyboardState.reset();
+  postProcessorChain.reset();
+}
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool PianoMannAudioProcessor::isBusesLayoutSupported(
@@ -143,12 +151,14 @@ void PianoMannAudioProcessor::processBlock(AudioBuffer<float> &buffer,
   const auto numSamples = buffer.getNumSamples();
   keyboardState.processNextMidiBuffer(midiMessages, 0, numSamples, true);
   synth.renderNextBlock(buffer, midiMessages, 0, numSamples);
+
+  dsp::AudioBlock<float> block(buffer);
+  const juce::dsp::ProcessContextReplacing<float> processContext(block); 
+  postProcessorChain.process(processContext);
 }
 
 //==============================================================================
-bool PianoMannAudioProcessor::hasEditor() const {
-  return true;
-}
+bool PianoMannAudioProcessor::hasEditor() const { return true; }
 
 AudioProcessorEditor *PianoMannAudioProcessor::createEditor() {
   return new PianoMannAudioProcessorEditor(*this);

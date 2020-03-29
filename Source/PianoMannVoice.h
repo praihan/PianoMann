@@ -36,7 +36,7 @@ private:
 
 struct PianoMannVoiceParams {
   int midiNoteNumber;
-  dsp::ProcessorBase& postProcessor;
+  dsp::ProcessorBase &postProcessor;
 };
 
 /**
@@ -68,6 +68,7 @@ struct PianoMannVoice : public SynthesiserVoice {
     jassert(isExcitationBufferReady);
     currentVelocity = velocity;
     isNoteHeld = true;
+    currentPowerLevel = 1.f;
     exciteBuffer();
   }
 
@@ -77,23 +78,50 @@ struct PianoMannVoice : public SynthesiserVoice {
     isNoteHeld = false;
   }
 
+  constexpr float getWeightedAverageFilterForNote(int midiNoteNumber) {
+    return 0.5f;
+    // return 0.8f;
+  }
+
+  struct DecaySpec {
+    float sustain;
+    float release;
+  };
+  constexpr DecaySpec getDecayForNote(int midiNoteNumber) {
+    return DecaySpec{0.998f, 0.98f};
+  }
+
   void renderNextBlock(AudioBuffer<float> &outputBuffer, int startSample,
                        int numSamples) override {
-    constexpr auto kDecay = 0.998f;
+    const static auto weightedAverageFilterFactor =
+        getWeightedAverageFilterForNote(params.midiNoteNumber);
+    const static auto decaySpec = getDecayForNote(params.midiNoteNumber);
 
-    if (!isNoteHeld) {
-      // TODO: add sustain
+    constexpr auto kDecayPowerLevelThreshold = 0.005f;
+
+    if (currentPowerLevel == 0.f) {
       return;
     }
+
+    const auto decayFactor = isNoteHeld ? decaySpec.sustain : decaySpec.release;
+    if (currentPowerLevel < kDecayPowerLevelThreshold) {
+      currentPowerLevel = 0.f;
+      clearCurrentNote();
+      return;
+    }
+    currentPowerLevel *= decayFactor;
 
     for (auto sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex) {
       const auto nextBufferPosition = (1 + currentBufferPosition) %
                                       static_cast<int>(delayLineBuffer.size());
 
+      const auto weightedNextDelaySample =
+          weightedAverageFilterFactor * delayLineBuffer[nextBufferPosition];
+      const auto weightCurrentDelaySample =
+          (1 - weightedAverageFilterFactor) *
+          delayLineBuffer[currentBufferPosition];
       delayLineBuffer[nextBufferPosition] =
-          (kDecay * 0.5f *
-           (delayLineBuffer[nextBufferPosition] +
-            delayLineBuffer[currentBufferPosition]));
+          (decayFactor * (weightedNextDelaySample + weightCurrentDelaySample));
 
       const auto currentSample = delayLineBuffer[currentBufferPosition];
       for (auto channel = outputBuffer.getNumChannels(); --channel >= 0;) {
@@ -153,4 +181,5 @@ private:
   int currentBufferPosition = 0;
 
   bool isNoteHeld = false;
+  float currentPowerLevel = 0.f;
 };

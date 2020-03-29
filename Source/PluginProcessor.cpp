@@ -43,7 +43,7 @@ void PianoMannAudioProcessor::initializeSynth() {
     synthPerVoicePostProcessors.emplace_back(
         // TODO: better audio processing
         new dsp::ProcessorWrapper<
-            dsp::ProcessorChain<PianoMannLowPassFilter<3500>>>);
+            dsp::ProcessorChain<PianoMannLowPassFilter<2500>>>);
     synth.addVoice(
         new PianoMannVoice({midiNote, *synthPerVoicePostProcessors.back()}));
     synth.addSound(new PianoMannSound(midiNote));

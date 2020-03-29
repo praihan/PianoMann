@@ -23,7 +23,7 @@ public:
   void prepare(const dsp::ProcessSpec &spec) override {
     auto coefficientsArrays =
         dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(
-            kCutoffFrequency, spec.sampleRate, 15);
+            kCutoffFrequency, spec.sampleRate, 17);
     filters.clear();
     filters.resize(coefficientsArrays.size());
 

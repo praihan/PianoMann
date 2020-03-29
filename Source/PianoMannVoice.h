@@ -14,9 +14,25 @@
 #include <algorithm>
 #include <vector>
 
+namespace MidiOctaves {
+enum {
+  kOctave_0 = 21,
+  kOctave_1 = kOctave_0 + 12,
+  kOctave_2 = kOctave_1 + 12,
+  kOctave_3 = kOctave_2 + 12,
+  kOctave_4 = kOctave_3 + 12,
+  kOctave_5 = kOctave_4 + 12,
+  kOctave_6 = kOctave_5 + 12,
+  kOctave_7 = kOctave_6 + 12,
+};
+
+constexpr int lastNoteFrom(int midiNote) { return midiNote + 3; }
+} // namespace MidiOctaves
+
 struct PianoMannSound : public SynthesiserSound {
-  constexpr static int kMinNote = 21;
-  constexpr static int kMaxNote = 84;
+  constexpr static int kMinNote = MidiOctaves::kOctave_1;
+  constexpr static int kMaxNote =
+      MidiOctaves::lastNoteFrom(MidiOctaves::kOctave_6);
 
   PianoMannSound(int _midiNoteNumber) : midiNoteNumber(_midiNoteNumber) {
     jassert(midiNoteNumber >= kMinNote && midiNoteNumber <= kMaxNote);
@@ -84,6 +100,12 @@ struct PianoMannVoice : public SynthesiserVoice {
   }
 
   static constexpr float getWeightedAverageFilterForNote(int midiNoteNumber) {
+    if (midiNoteNumber <= MidiOctaves::kOctave_0 + 6) {
+      return 0.43f;
+    }
+    if (midiNoteNumber >= MidiOctaves::kOctave_5) {
+      return 0.85f;
+    }
     return 0.7f;
   }
 
@@ -92,7 +114,11 @@ struct PianoMannVoice : public SynthesiserVoice {
     float release;
   };
   static constexpr DecaySpec getDecayForNote(int midiNoteNumber) {
-    return DecaySpec{0.998f, 0.992f};
+    constexpr auto kRelease = 0.992f;
+    if (midiNoteNumber >= MidiOctaves::kOctave_5) {
+      return DecaySpec{0.9992f, kRelease};
+    }
+    return DecaySpec{0.997f, kRelease};
   }
 
   void renderNextBlock(AudioBuffer<float> &outputBuffer, int startSample,

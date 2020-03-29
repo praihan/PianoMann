@@ -11,23 +11,39 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <vector>
 
 template <int kCutoffFrequency>
 class PianoMannLowPassFilter : dsp::ProcessorBase {
   using IIRFilter = dsp::ProcessorDuplicator<dsp::IIR::Filter<float>,
                                              dsp::IIR::Coefficients<float>>;
-  IIRFilter filter;
+  std::vector<IIRFilter> filters;
 
 public:
   void prepare(const dsp::ProcessSpec &spec) override {
-    filter.state = dsp::IIR::Coefficients<float>::makeLowPass(spec.sampleRate,
-                                                              kCutoffFrequency);
-    filter.prepare(spec);
+    auto coefficientsArrays =
+        dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(
+            kCutoffFrequency, spec.sampleRate, 15);
+    filters.clear();
+    filters.resize(coefficientsArrays.size());
+
+    auto filterIterator = filters.begin();
+    for (auto &coefficients : coefficientsArrays) {
+      filterIterator->state = coefficients;
+      filterIterator->prepare(spec);
+      ++filterIterator;
+    }
   }
 
   void process(const dsp::ProcessContextReplacing<float> &context) override {
-    filter.process(context);
+    for (auto &filter : filters) {
+      filter.process(context);
+    }
   }
 
-  void reset() override { filter.reset(); }
+  void reset() override {
+    for (auto &filter : filters) {
+      filter.reset();
+    }
+  }
 };

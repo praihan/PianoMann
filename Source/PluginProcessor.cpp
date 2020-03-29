@@ -11,7 +11,6 @@
 #include "PluginProcessor.h"
 #include "PianoMannVoice.h"
 #include "PluginEditor.h"
-#include <algorithm>
 
 //==============================================================================
 PianoMannAudioProcessor::PianoMannAudioProcessor()
@@ -34,18 +33,11 @@ PianoMannAudioProcessor::~PianoMannAudioProcessor() = default;
 void PianoMannAudioProcessor::initializeSynth() {
   synth.clearVoices();
   synth.clearSounds();
-  synthPerVoicePostProcessors.clear();
-  synthPerVoicePostProcessors.reserve(PianoMannSound::kMaxNote -
-                                      PianoMannSound::kMinNote + 1);
 
   for (auto midiNote = PianoMannSound::kMinNote;
        midiNote <= PianoMannSound::kMaxNote; ++midiNote) {
-    synthPerVoicePostProcessors.emplace_back(
-        // TODO: better audio processing
-        new dsp::ProcessorWrapper<
-            dsp::ProcessorChain<PianoMannLowPassFilter<2500>>>);
     synth.addVoice(
-        new PianoMannVoice({midiNote, *synthPerVoicePostProcessors.back()}));
+        new PianoMannVoice({midiNote}));
     synth.addSound(new PianoMannSound(midiNote));
   }
 }
@@ -114,21 +106,11 @@ void PianoMannAudioProcessor::prepareToPlay(
   const dsp::ProcessSpec processSpec{
       sampleRate, static_cast<uint32>(maximumExpectedSamplesPerBlock),
       static_cast<uint32>(getTotalNumOutputChannels())};
-  std::for_each(synthPerVoicePostProcessors.begin(),
-                synthPerVoicePostProcessors.end(),
-                [processSpec](std::unique_ptr<dsp::ProcessorBase> &processor) {
-                  processor->prepare(processSpec);
-                });
   synthPostProcessor.prepare(processSpec);
 }
 
 void PianoMannAudioProcessor::releaseResources() {
   keyboardState.reset();
-  std::for_each(synthPerVoicePostProcessors.begin(),
-                synthPerVoicePostProcessors.end(),
-                [](std::unique_ptr<dsp::ProcessorBase> &processor) {
-                  processor->reset();
-                });
   synthPostProcessor.reset();
 }
 

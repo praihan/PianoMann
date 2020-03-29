@@ -16,7 +16,7 @@
 
 struct PianoMannSound : public SynthesiserSound {
   constexpr static int kMinNote = 21;
-  constexpr static int kMaxNote = 108;
+  constexpr static int kMaxNote = 84;
 
   PianoMannSound(int _midiNoteNumber) : midiNoteNumber(_midiNoteNumber) {
     jassert(midiNoteNumber >= kMinNote && midiNoteNumber <= kMaxNote);
@@ -36,7 +36,6 @@ private:
 
 struct PianoMannVoiceParams {
   int midiNoteNumber;
-  dsp::ProcessorBase &postProcessor;
 };
 
 /**
@@ -68,27 +67,32 @@ struct PianoMannVoice : public SynthesiserVoice {
     jassert(isExcitationBufferReady);
     currentVelocity = velocity;
     isNoteHeld = true;
-    currentPowerLevel = 1.f;
+    tailOff = 0.f;
     exciteBuffer();
   }
 
   void stopNote(float velocity, bool allowTailOff) override {
-    ignoreUnused(velocity, allowTailOff);
-    clearCurrentNote();
+    ignoreUnused(velocity);
+    if (allowTailOff) {
+      if (tailOff == 0.f) {
+        tailOff = 1.0f;
+      }
+    } else {
+      clearCurrentNote();
+    }
     isNoteHeld = false;
   }
 
-  constexpr float getWeightedAverageFilterForNote(int midiNoteNumber) {
-    return 0.5f;
-    // return 0.8f;
+  static constexpr float getWeightedAverageFilterForNote(int midiNoteNumber) {
+    return 0.7f;
   }
 
   struct DecaySpec {
     float sustain;
     float release;
   };
-  constexpr DecaySpec getDecayForNote(int midiNoteNumber) {
-    return DecaySpec{0.998f, 0.98f};
+  static constexpr DecaySpec getDecayForNote(int midiNoteNumber) {
+    return DecaySpec{0.998f, 0.992f};
   }
 
   void renderNextBlock(AudioBuffer<float> &outputBuffer, int startSample,
@@ -99,17 +103,20 @@ struct PianoMannVoice : public SynthesiserVoice {
 
     constexpr auto kDecayPowerLevelThreshold = 0.005f;
 
-    if (currentPowerLevel == 0.f) {
+    if (!isNoteHeld && tailOff == 0.f) {
+      // Not playing note nor releasing it slowly
       return;
     }
 
-    const auto decayFactor = isNoteHeld ? decaySpec.sustain : decaySpec.release;
-    if (currentPowerLevel < kDecayPowerLevelThreshold) {
-      currentPowerLevel = 0.f;
-      clearCurrentNote();
-      return;
+    if (tailOff > 0.f) {
+      // tailOff > 0.f implies we are releasing this note slowly.
+      tailOff *= decaySpec.release;
+      if (tailOff < kDecayPowerLevelThreshold) {
+        tailOff = 0.f;
+        clearCurrentNote();
+        return;
+      }
     }
-    currentPowerLevel *= decayFactor;
 
     for (auto sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex) {
       const auto nextBufferPosition = (1 + currentBufferPosition) %
@@ -120,8 +127,13 @@ struct PianoMannVoice : public SynthesiserVoice {
       const auto weightCurrentDelaySample =
           (1 - weightedAverageFilterFactor) *
           delayLineBuffer[currentBufferPosition];
+
+      auto decay = decaySpec.sustain;
+      if (tailOff > 0.f) {
+        decay *= tailOff;
+      }
       delayLineBuffer[nextBufferPosition] =
-          (decayFactor * (weightedNextDelaySample + weightCurrentDelaySample));
+          decay * (weightedNextDelaySample + weightCurrentDelaySample);
 
       const auto currentSample = delayLineBuffer[currentBufferPosition];
       for (auto channel = outputBuffer.getNumChannels(); --channel >= 0;) {
@@ -131,10 +143,6 @@ struct PianoMannVoice : public SynthesiserVoice {
 
       currentBufferPosition = nextBufferPosition;
     }
-
-    dsp::AudioBlock<float> block(outputBuffer);
-    const dsp::ProcessContextReplacing<float> processingContext(block);
-    params.postProcessor.process(processingContext);
   }
 
   using SynthesiserVoice::renderNextBlock;
@@ -181,5 +189,5 @@ private:
   int currentBufferPosition = 0;
 
   bool isNoteHeld = false;
-  float currentPowerLevel = 0.f;
+  float tailOff = 0.f;
 };

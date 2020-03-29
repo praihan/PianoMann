@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "PianoMannLowPassFilter.h"
+#include "PianoMannButterworthLowPassFilter.h"
 #include <JuceHeader.h>
 
 //==============================================================================
@@ -23,8 +23,8 @@ public:
 private:
   Synthesiser synth;
   void initializeSynth();
-  // TODO: change frequency of low-pass filter
-  dsp::ProcessorChain<PianoMannLowPassFilter<5000>> synthPostProcessor;
+  dsp::ProcessorChain<PianoMannButterworthLowPassFilter<5000, 17>>
+      synthPostProcessor;
 
 public:
   //==============================================================================

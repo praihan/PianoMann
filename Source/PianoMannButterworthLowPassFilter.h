@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    PianoMannLowPassFilter.h
+    PianoMannButterworthLowPassFilter.h
     Created: 28 Mar 2020 7:24:27am
     Author:  Pranjal Raihan
 
@@ -13,8 +13,11 @@
 #include <JuceHeader.h>
 #include <vector>
 
-template <int kCutoffFrequency>
-class PianoMannLowPassFilter : dsp::ProcessorBase {
+/**
+ * A Low-pass Butterworth filter processor with compile-time cut-off frequency and order.
+ */
+template <int kCutoffFrequency, int kOrder>
+class PianoMannButterworthLowPassFilter : dsp::ProcessorBase {
   using IIRFilter = dsp::ProcessorDuplicator<dsp::IIR::Filter<float>,
                                              dsp::IIR::Coefficients<float>>;
   std::vector<IIRFilter> filters;
@@ -23,7 +26,7 @@ public:
   void prepare(const dsp::ProcessSpec &spec) override {
     auto coefficientsArrays =
         dsp::FilterDesign<float>::designIIRLowpassHighOrderButterworthMethod(
-            kCutoffFrequency, spec.sampleRate, 17);
+            kCutoffFrequency, spec.sampleRate, kOrder);
     filters.clear();
     filters.resize(coefficientsArrays.size());
 

@@ -151,6 +151,7 @@ void PianoMannAudioProcessor::processBlock(AudioBuffer<float> &buffer,
 
   const auto numSamples = buffer.getNumSamples();
   keyboardState.processNextMidiBuffer(midiMessages, 0, numSamples, true);
+
   synth.renderNextBlock(buffer, midiMessages, 0, numSamples);
 
   dsp::AudioBlock<float> block(buffer);

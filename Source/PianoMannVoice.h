@@ -14,6 +14,9 @@
 #include <algorithm>
 #include <vector>
 
+/**
+ * Piano octaves as midi note numbers.
+ */
 namespace MidiOctaves {
 enum {
   kOctave_0 = 21,
@@ -29,6 +32,10 @@ enum {
 constexpr int lastNoteFrom(int midiNote) { return midiNote + 3; }
 } // namespace MidiOctaves
 
+/**
+ * A synth sound backing exactly one note. This is because every key is
+ * individually modeled.
+ */
 struct PianoMannSound : public SynthesiserSound {
   constexpr static int kMinNote = MidiOctaves::kOctave_1;
   constexpr static int kMaxNote =
@@ -51,6 +58,9 @@ private:
 };
 
 struct PianoMannVoiceParams {
+  /**
+   * The midi note number being played. This maps to one single piano key.
+   */
   int midiNoteNumber;
 };
 
@@ -81,7 +91,7 @@ struct PianoMannVoice : public SynthesiserVoice {
     ignoreUnused(currentPitchWheelPosition);
     jassert(midiNoteNumber == params.midiNoteNumber);
     jassert(isExcitationBufferReady);
-    currentVelocity = velocity;
+    currentNoteVelocity = velocity;
     isNoteHeld = true;
     tailOff = 0.f;
     exciteBuffer();
@@ -99,6 +109,15 @@ struct PianoMannVoice : public SynthesiserVoice {
     isNoteHeld = false;
   }
 
+  /**
+   * The Karplus-Strong synthesis algorithm we have uses a two-point weighted average
+   * filter. The value returned here determines the weight of the `current` sample.
+   * The filter is defined as
+   * ```
+   * let S = return value;
+   * y[t] = S*x[t] + (1-S)*x[t-1]
+   * ```
+   */
   static constexpr float getWeightedAverageFilterForNote(int midiNoteNumber) {
     if (midiNoteNumber <= MidiOctaves::kOctave_0 + 6) {
       return 0.43f;
@@ -110,9 +129,19 @@ struct PianoMannVoice : public SynthesiserVoice {
   }
 
   struct DecaySpec {
+    /**
+     * The decay rate for the note's sustain. Value must be [0, 1].
+     */
     float sustain;
+    /**
+     * The additional decay rate after the note is released. This is used to
+     * slowly fade out a note upon release. Value must be [0, 1].
+     */
     float release;
   };
+  /**
+   * Gets the sustain and release parameters given a midi note number.
+   */
   static constexpr DecaySpec getDecayForNote(int midiNoteNumber) {
     constexpr auto kRelease = 0.992f;
     if (midiNoteNumber >= MidiOctaves::kOctave_5) {
@@ -179,6 +208,10 @@ struct PianoMannVoice : public SynthesiserVoice {
   }
 
 private:
+  /**
+   * Set up the delay-line as shown in Karplus-Strong. The length of the delay line determines
+   * the frequency of note played.
+   */
   void prepareExcitationBuffers() {
     const auto sampleRate = getSampleRate();
     jassert(sampleRate != 0.0);
@@ -199,21 +232,43 @@ private:
     isExcitationBufferReady = true;
   }
 
+  /**
+   * Create burst of "noise" seeding the Karplus-Strong feedback loop. Since this feeds the delay line,
+   * it must be equal or smaller in length (preferably the same size).
+   */
   void exciteBuffer() {
     jassert(delayLineBuffer.size() >= excitationBuffer.size());
 
     std::transform(excitationBuffer.begin(), excitationBuffer.end(),
                    delayLineBuffer.begin(),
-                   [this](float sample) { return currentVelocity * sample; });
+                   [this](float sample) { return currentNoteVelocity * sample; });
   }
 
+  /**
+   * The string synthesis constant parameters.
+   */
   const PianoMannVoiceParams params;
-  float currentVelocity = 0.f;
+  /**
+   * The velocity of the currently played note.
+   */
+  float currentNoteVelocity = 0.f;
 
   bool isExcitationBufferReady = false;
   std::vector<float> excitationBuffer, delayLineBuffer;
+  /**
+   * The delay line buffer is a feedback loop and so the array behaves as a ring buffer. This tracks
+   * the current position in the ring buffer.
+   */
   int currentBufferPosition = 0;
 
+  /**
+   * Whether or not the currently playing note is held down right now. Upon release, this is `false`
+   * but there might still be some sound created after release.
+   */
   bool isNoteHeld = false;
+  /**
+   * The current value of the decay that starts after a note's release. A value of (approximately) 0 means that the decay
+   * is (mostly) complete. A value of 1 is used to initialize the tail off.
+   */
   float tailOff = 0.f;
 };

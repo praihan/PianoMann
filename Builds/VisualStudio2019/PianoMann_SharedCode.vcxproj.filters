@@ -2520,7 +2520,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Source\PianoMannLowPassFilter.h">
+    <ClInclude Include="..\..\Source\PianoMannButterworthLowPassFilter.h">
       <Filter>PianoMann\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\PianoMannVoice.h">

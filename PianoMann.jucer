@@ -6,8 +6,8 @@
               bundleIdentifier="com.pianomann.PianoMann">
   <MAINGROUP id="wzSjqj" name="PianoMann">
     <GROUP id="{3520A161-3570-17E8-AE6B-59B689E4A599}" name="Source">
-      <FILE id="uJn4D4" name="PianoMannLowPassFilter.h" compile="0" resource="0"
-            file="Source/PianoMannLowPassFilter.h"/>
+      <FILE id="uJn4D4" name="PianoMannButterworthLowPassFilter.h" compile="0"
+            resource="0" file="Source/PianoMannButterworthLowPassFilter.h"/>
       <FILE id="VY3yf5" name="PianoMannVoice.h" compile="0" resource="0"
             file="Source/PianoMannVoice.h"/>
       <FILE id="PyKlWJ" name="PluginProcessor.cpp" compile="1" resource="0"

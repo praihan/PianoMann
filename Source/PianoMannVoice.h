@@ -91,6 +91,7 @@ struct PianoMannVoice : public SynthesiserVoice {
     ignoreUnused(currentPitchWheelPosition);
     jassert(midiNoteNumber == params.midiNoteNumber);
     jassert(isExcitationBufferReady);
+    ignoreUnused(midiNoteNumber);
     currentNoteVelocity = velocity;
     isNoteHeld = true;
     tailOff = 0.f;
